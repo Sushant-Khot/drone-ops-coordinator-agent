@@ -1,59 +1,209 @@
-# Drone Operations Coordinator AI Agent
+# 🚁 Drone Operations Coordinator AI Agent
 
-An AI agent that handles core responsibilities of a drone operations coordinator for Skylark Drones: roster management, assignment tracking, drone inventory, and conflict detection with 2-way Google Sheets sync.
+An AI-powered **Drone Operations Coordinator** for managing pilots, drone fleet inventory, project assignments, and conflict resolution using a **conversational interface** with **Google Sheets 2-way sync**.
 
-## Architecture Overview
+This project automates the high-context operational coordination work done manually using spreadsheets and messages.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Conversational UI (Streamlit)                  │
-├─────────────────────────────────────────────────────────────────┤
-│                     Agent / Orchestration Layer                   │
-│  (intent handling, tool calls, conflict checks, reassignments)   │
-├──────────────┬──────────────┬──────────────┬────────────────────┤
-│   Roster     │  Assignment  │   Drone      │   Conflict          │
-│   Manager    │  Tracker     │   Inventory  │   Detector          │
-├──────────────┴──────────────┴──────────────┴────────────────────┤
-│              Google Sheets Integration (2-way sync)              │
-├─────────────────────────────────────────────────────────────────┤
-│         Pilot Roster Sheet    │    Drone Fleet Sheet             │
-└─────────────────────────────────────────────────────────────────┘
-```
+---
 
-- **Tech stack**: Python 3.10+, Streamlit (UI), gspread + Google Auth (Sheets), OpenAI-compatible API or local LLM for conversation.
-- **Data**: Pilot Roster and Drone Fleet live in Google Sheets; agent reads on load/refresh and writes back status updates.
-- **Features**: Query pilots/drones by skill/capability/location, update status (Available/On Leave/Unavailable, drone status), match pilots to projects, track assignments, detect double-booking/skill/location/maintenance conflicts, support urgent reassignments.
+## 📌 Problem Overview
 
-## Setup
+Skylark Drones operates multiple drone projects simultaneously. Coordination requires:
 
-1. **Clone and install**
-   ```bash
-   cd drone-ops-coordinator-agent
-   pip install -r requirements.txt
-   ```
+- Pilot roster tracking (availability, leave, assignments)
+- Drone inventory tracking (available, deployed, maintenance)
+- Matching pilots and drones to projects based on requirements
+- Detecting conflicts (double booking, certification mismatch, maintenance issues)
+- Supporting urgent reassignment scenarios
 
-2. **Google Sheets**
-   - Create two sheets: "Pilot Roster" and "Drone Fleet" (or use sheet IDs in env).
-   - Use the CSV templates in `data/` to define columns; upload or copy structure to Sheets.
-   - Enable Google Sheets API, create a service account, download JSON key, save as `credentials.json` in project root (or set `GOOGLE_APPLICATION_CREDENTIALS`).
+This AI Agent reduces manual overhead and improves scheduling accuracy.
 
-3. **Environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env: GOOGLE_SHEET_ID, OPENAI_API_KEY (or other LLM endpoint), etc.
-   ```
+---
 
-4. **Run**
-   ```bash
-   streamlit run app.py
-   ```
+## 🎯 Key Features
 
-## Deliverables
+### ✅ 1. Pilot Roster Management
+- Query pilots by:
+  - location
+  - certification
+  - skill level
+  - availability status
+- View current assignments
+- Update pilot status (**syncs back to Google Sheets**)
 
-- **Hosted prototype**: Deploy to Streamlit Cloud / Replit / Vercel (see `DEPLOY.md` if present).
-- **Decision Log**: `docs/DECISION_LOG.md` (assumptions, trade-offs, urgent reassignments interpretation).
-- **Source**: This repo; ZIP for submission.
+---
 
-## License
+### ✅ 2. Assignment Tracking
+- Match best pilot for a project based on:
+  - required skills
+  - required certifications
+  - availability
+  - location
+- Track active assignments
+- Support reassignment logic
 
-MIT (or as specified by Skylark Drones).
+---
+
+### ✅ 3. Drone Fleet Inventory Management
+- Query drones by:
+  - capability (thermal camera, payload support, night ops etc.)
+  - availability
+  - location
+- Track drone deployment status
+- Flag drones under maintenance
+- Update drone status (**syncs back to Google Sheets**)
+
+---
+
+### ✅ 4. Conflict Detection Engine
+The agent detects and warns about:
+
+- Pilot double booking (overlapping project dates)
+- Drone double booking (overlapping deployment dates)
+- Certification mismatch (pilot missing required certification)
+- Drone maintenance assignment issue
+- Location mismatch (pilot & drone in different city)
+
+---
+
+### 🚨 Bonus Feature: Urgent Reassignment (Mandatory)
+The agent supports urgent projects by:
+- finding available replacements immediately
+- suggesting reassignments with minimum disruption
+- recommending fallback options if no resources are free
+
+---
+
+## 🏗️ Architecture Overview
+
+**Frontend**
+- Streamlit Chat UI (conversational interface)
+
+**Backend**
+- Python-based agent logic (FastAPI optional)
+
+**Database**
+- Google Sheets used as the single source of truth
+
+**Integration**
+- Google Sheets API (2-way sync)
+
+---
+
+## 📂 Project Structure
+
+drone-ops-coordinator-agent/
+│── app/
+│ │── agent.py
+│ │── sheets_client.py
+│ │── assignment_engine.py
+│ │── conflict_detector.py
+│ │── main.py
+│
+│── ui/
+│ │── streamlit_app.py
+│
+│── data/
+│ │── sample_pilot_roster.csv
+│ │── sample_drone_fleet.csv
+│
+│── decision_log.md
+│── requirements.txt
+│── README.md
+│── .env.example
+│── .gitignore
+
+
+---
+
+## 🧾 Google Sheets Format
+
+### 📌 Pilot Roster Sheet (Example Columns)
+| name | skill_level | certifications | drone_experience | location | current_assignment | status |
+|------|------------|----------------|------------------|----------|-------------------|--------|
+| Ravi | Intermediate | DGCA,NightOps | DJI M300 | Bangalore | Project A | Available |
+
+---
+
+### 📌 Drone Fleet Sheet (Example Columns)
+| model | serial_number | capabilities | location | status | current_assignment |
+|------|--------------|--------------|----------|--------|-------------------|
+| DJI M300 | DJI-102 | Thermal,Payload | Pune | Maintenance | None |
+
+---
+
+## 🔄 Google Sheets 2-Way Sync
+
+This project supports **read + write** sync.
+
+### Reads:
+- Pilot Roster sheet
+- Drone Fleet sheet
+
+### Writes:
+- Pilot status updates
+- Drone status updates
+- Assignment updates (optional)
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|----------|------------|
+| Language | Python |
+| UI | Streamlit |
+| Sheets Integration | gspread + Google Sheets API |
+| Data Handling | Pandas |
+| Agent Logic | Custom rules + optional LLM support |
+
+---
+
+## ⚙️ Installation & Setup (Local)
+
+### 1️⃣ Clone Repo
+```bash
+git clone https://github.com/Sushant-Khot/drone-ops-coordinator-agent.git
+cd drone-ops-coordinator-agent
+2️⃣ Create Virtual Environment
+python -m venv venv
+source venv/bin/activate   # Mac/Linux
+venv\Scripts\activate      # Windows
+3️⃣ Install Dependencies
+pip install -r requirements.txt
+4️⃣ Setup Environment Variables
+Create .env file using .env.example
+
+5️⃣ Run Streamlit UI
+streamlit run ui/streamlit_app.py
+assumptions
+
+tradeoffs
+
+urgent reassignment interpretation
+
+improvements planned if more time available
+
+📦 Deliverables Checklist
+✅ Hosted Prototype 
+✅ Decision Log 
+✅ Source Code ZIP
+✅ README with architecture + setup guide
+✅ Google Sheets 2-way sync
+
+🔮 Future Improvements
+If more time is available:
+
+Add authentication for coordinator login
+
+Add calendar-based scheduling visualization
+
+Add project sheet integration
+
+Auto-prioritization based on project urgency
+
+Add notifications (Slack / Email integration)
+
+👨‍💻 Author
+Sushant Kantu Khot
+
