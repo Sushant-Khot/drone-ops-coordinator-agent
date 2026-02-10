@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 # Ensure `import app.*` works even when Streamlit is launched from a different
 # working directory / Python environment.
 if str(_PROJECT_ROOT) not in sys.path:
@@ -33,6 +34,7 @@ def _load_env_fallback(env_path: str = ".env") -> None:
         return
 
 
+# Load dotenv if available (for local run)
 try:
     from dotenv import load_dotenv  # type: ignore
 
@@ -83,6 +85,23 @@ def _init_state() -> None:
         ]
 
 
+def _get_script_url() -> str:
+    """
+    Loads GOOGLE_SCRIPT_URL from:
+    1) local .env environment variable
+    2) Streamlit Cloud secrets
+    """
+    script_url = os.getenv("GOOGLE_SCRIPT_URL", "").strip()
+
+    if not script_url:
+        try:
+            script_url = str(st.secrets["GOOGLE_SCRIPT_URL"]).strip()
+        except Exception:
+            script_url = ""
+
+    return script_url.strip()
+
+
 def main() -> None:
     st.set_page_config(
         page_title="Skylark Drones — Ops Coordinator",
@@ -101,17 +120,24 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
-    script_url = os.getenv("GOOGLE_SCRIPT_URL", "").strip()
+    # Load Script URL from .env OR Streamlit secrets
+    script_url = _get_script_url()
+
     if not script_url:
-        st.error("Missing `GOOGLE_SCRIPT_URL`. Add it to `.env` in the project root.")
-        st.code("GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/AKfycb.../exec")
+        st.error("Missing `GOOGLE_SCRIPT_URL`.")
+        st.info("✅ Local Run: Add it to `.env` in the project root.")
+        st.info("✅ Streamlit Cloud: Add it in App Settings → Secrets.")
+        st.code('GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/XXXX/exec"')
         st.stop()
 
     client, agent = _get_client_and_agent(script_url)
 
     with st.sidebar:
         st.markdown("## Ops Console")
-        st.markdown('<div class="small-muted">Live data via Google Apps Script</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="small-muted">Live data via Google Apps Script</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown(" ")
         st.text_input("Google Script URL", value=script_url, disabled=True)
 
@@ -149,7 +175,10 @@ def main() -> None:
     left, right = st.columns([0.65, 0.35], gap="large")
     with left:
         st.markdown("## Drone Operations Coordinator")
-        st.markdown('<div class="small-muted">Chat-driven coordination + live roster and fleet tables.</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="small-muted">Chat-driven coordination + live roster and fleet tables.</div>',
+            unsafe_allow_html=True,
+        )
 
     # Data snapshot + metrics
     pilots, drones = _fetch_tables(script_url)
@@ -216,4 +245,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
