@@ -47,7 +47,7 @@ class AssignmentEngine:
                 return {
                     "pilot": candidate_pilot,
                     "drone": candidate_drone,
-                    "reason": f"Reassigned pilot {candidate_pilot.get('name')} and drone {candidate_drone.get('drone_id')} (least disruption)"
+                    "reason": f"Reassigned pilot {candidate_pilot.get('Name')} and drone {candidate_drone.get('Serial')} (least disruption)"
                 }
 
         return None
@@ -59,8 +59,8 @@ class AssignmentEngine:
         eligible = []
 
         for p in pilots:
-            status = str(p.get("status", "")).lower()
-            pilot_loc = str(p.get("location", "")).lower()
+            status = str(p.get("Status", "")).lower()
+            pilot_loc = str(p.get("Location", "")).lower()
 
             # Normal mode: only available pilots
             if not urgent:
@@ -73,14 +73,14 @@ class AssignmentEngine:
                     continue
 
             # cert check
-            pilot_certs = self._parse_list(p.get("certifications", ""))
+            pilot_certs = self._parse_list(p.get("Certifications", ""))
             if not self._has_all_certs(pilot_certs, required_certs):
                 continue
 
             eligible.append(p)
 
         # Sort pilots: prioritize Available first
-        eligible.sort(key=lambda x: str(x.get("status", "")).lower() != "available")
+        eligible.sort(key=lambda x: str(x.get("Status", "")).lower() != "available")
         return eligible
 
     # --------------------------------------------------
@@ -90,9 +90,9 @@ class AssignmentEngine:
         eligible = []
 
         for d in drones:
-            status = str(d.get("status", "")).lower()
-            drone_loc = str(d.get("location", "")).lower()
-            capability = str(d.get("capabilities", "")).lower()
+            status = str(d.get("Status", "")).lower()
+            drone_loc = str(d.get("Location", "")).lower()
+            capability = str(d.get("Capability", "")).lower()
 
             # Normal mode: only available drones
             if not urgent:
@@ -115,7 +115,7 @@ class AssignmentEngine:
 
             eligible.append(d)
 
-        eligible.sort(key=lambda x: str(x.get("status", "")).lower() != "available")
+        eligible.sort(key=lambda x: str(x.get("Status", "")).lower() != "available")
         return eligible
 
     # --------------------------------------------------
@@ -128,20 +128,19 @@ class AssignmentEngine:
         candidates = []
 
         for p in pilots:
-            status = str(p.get("status", "")).lower()
-            pilot_loc = str(p.get("location", "")).lower()
+            status = str(p.get("Status", "")).lower()
+            pilot_loc = str(p.get("Location", "")).lower()
 
             if location and location.lower() not in pilot_loc:
                 continue
 
-            pilot_certs = self._parse_list(p.get("certifications", ""))
+            pilot_certs = self._parse_list(p.get("Certifications", ""))
             if not self._has_all_certs(pilot_certs, required_certs):
                 continue
 
             # only consider busy pilots for reassignment
             if status in ["busy", "assigned", "deployed"]:
-                # Optional field if your sheet provides it
-                end_date = p.get("assigned_end") or p.get("AssignedEnd")
+                end_date = p.get("AssignedEnd")
                 if end_date:
                     candidates.append((p, end_date))
 
@@ -159,9 +158,9 @@ class AssignmentEngine:
         candidates = []
 
         for d in drones:
-            status = str(d.get("status", "")).lower()
-            drone_loc = str(d.get("location", "")).lower()
-            capability = str(d.get("capabilities", "")).lower()
+            status = str(d.get("Status", "")).lower()
+            drone_loc = str(d.get("Location", "")).lower()
+            capability = str(d.get("Capability", "")).lower()
 
             if "maintenance" in status:
                 continue
@@ -173,7 +172,7 @@ class AssignmentEngine:
                 continue
 
             if status in ["busy", "assigned", "deployed"]:
-                end_date = d.get("assigned_end") or d.get("AssignedEnd")
+                end_date = d.get("AssignedEnd")
                 if end_date:
                     candidates.append((d, end_date))
 
