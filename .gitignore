@@ -1,0 +1,8 @@
+.env
+credentials.json
+*.pyc
+__pycache__/
+.venv/
+venv/
+*.zip
+.DS_Store
